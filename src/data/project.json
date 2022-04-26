@@ -1,0 +1,26 @@
+{
+  "data": [
+      {
+        "ProjectID": "1",
+        "Name": "疏水巷施工",
+        "Type": "岩巷",
+        "Manager": "宝平安",
+        "ProjectPeriod": "6个月",
+        "StartTime": "2015-08-01T00:00:00",
+        "DesignerOrginazation": "北京安赢堡科技发展有限公司",
+        "Designer": "高程",
+        "LanewaySectionType": "圆拱"
+      },
+      {
+        "ProjectID": "2",
+        "Name": "运输顺槽",
+        "Type": "煤巷",
+        "Manager": "宝平安",
+        "ProjectPeriod": "12个月",
+        "StartTime": "2015-08-15T00:00:00",
+        "DesignerOrginazation": "北京安赢堡科技发展有限公司",
+        "Designer": "高程",
+        "LanewaySectionType": "圆拱"
+      }
+  ]
+}
