@@ -173,6 +173,12 @@
 .right-map-view.min {
   width: calc(100vw - 29px);
 }
+.canvasMax{
+  width: calc(40%);
+}
+.canvasMin{
+   width: calc(40% - 187px);
+}
 .multi-view {
 }
 .cesium-single-view {
@@ -556,7 +562,8 @@
     <div class="right-map-view" :class="!showMaxNav ? 'min' : ''" id="content">
       <div
         id="mapcontent2D"
-        :style="{ width: '40%', height: '100%' }"
+        :style="{ height: '100%' }"
+        :class="showMaxNav?'canvasMax':'canvasMin'"
         v-show="ifshow2D"
         ref="mapcontent2DRef"
       >
@@ -570,9 +577,10 @@
       </div>
       <div
         id="mapcontent3D"
+        :class="showMaxNav?'canvasMax':'canvasMin'"
         :style="{
           background: '#fff',
-          width: `${ifshow2D == false || !this.projectID ? '100%' : '60%'}`
+          width : width3D
         }"
       >
         <cesiumContainer
@@ -810,18 +818,6 @@ export default {
     }
   },
   watch: {
-    mineid(val) {
-      if (val == "") {
-        this.showlayer = false;
-      } else {
-        if (this.mineName == "") {
-          (this.minevalue = ""), (this.showlayer = false);
-        } else {
-          this.showlayer = true;
-          this.minevalue = "当前矿山: " + this.mineName;
-        }
-      }
-    },
     projectID(val) {
       if (val == "") {
         this.showlayer = false;
@@ -834,24 +830,19 @@ export default {
         }
       }
     },
-    showMaxNav() {
-      this.width2D = this.ifshow2D
-        ? document.getElementById("content").clientWidth * 0.4
-        : 500;
-    }
   },
   computed: {
     consoleMsg() {
       return this.$store.state.consoleMsg;
     },
-    //炮眼二维是否显示
+/*     //炮眼二维是否显示
     ifShotShow() {
       return this.$store.state.showListCheck["shotChecked"];
     },
     //起爆顺序二维是否显示
     ifBlastShow() {
       return this.$store.state.showListCheck["blastChecked"];
-    },
+    }, */
     //是否显示二维图层
     ifshow2D() {
       return (
@@ -859,6 +850,15 @@ export default {
         this.$store.state.showListCheck["shotChecked"] ||
         this.$store.state.showListCheck["blastChecked"]
       );
+    },
+    width3D(){
+      if (!this.ifshow2D || !this.projectID) {
+        return 'calc(100%)'
+      }else if(this.ifshow2D && !this.showMaxNav){//侧边栏收起来
+        return 'calc(60% + 187px)'
+      }else{
+        return 'calc(60%)'
+      }
     },
     width2D() {
       return this.ifshow2D

@@ -11,7 +11,6 @@
     <!-- 炮眼设计 -->
     <ShotHoleLayer
       :viewer="viewer"
-      :ctx="ctx"
       :projectID="projectID"
       :iseditable="iseditable"
       :shotData="shotData"
@@ -21,7 +20,6 @@
     <BlastOrderLayer
       :viewer="viewer"
       :projectID="projectID"
-      :ctx="ctx"
       :iseditable="iseditable"
       :shotData="shotData"
       ref="blastOrderRef"

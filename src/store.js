@@ -16,9 +16,6 @@ export default new Vuex.Store({
       organizationChecked: false,
       processChecked: false
     },
-    shotImgData: {},
-    blastImgData: {},
-    sectionImgData: {}
   },
   mutations: {
     SET_CMSG(state, consoleMsg) {

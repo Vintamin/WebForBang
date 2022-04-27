@@ -55,6 +55,7 @@ export default {
       riskData: [],
       showDialog: false,
       orderTypeNum: 5,
+      //起爆顺序不同类型的数据
       orderTypeData: null,
       context: null,
       OrderTypeColor: [
@@ -64,7 +65,9 @@ export default {
         "#FF0000", //红色
         "#9900CC" //紫色
       ],
-      scale: 30,
+      scale: 40,
+      //距离上和左的距离
+      moveLenFront:150,
       clickItemNums: 0
     };
   },
@@ -178,6 +181,26 @@ export default {
           )
         ]
       );
+    },
+    getBlastTree(){
+      this.orderTypeData.forEach((item,index)=>{
+        this.treeData[0].children.push({
+          title:`起爆顺序${item[0].BangOrder}`,//取每个起爆顺序的第一项即可
+           render: (h, { root, node, data }) => {
+            return h(
+              "span",
+              {
+                style: {
+                  display: "inline-block",
+                  width: "100%"
+                }
+              },
+              [h("span", [h("span", data.title)])]
+            );
+          },
+          id:index
+        })
+      })
     },
     gettree() {
       this.treeData[0].checked = false; //kk
@@ -391,17 +414,17 @@ export default {
           if (j == 0) {
             context.fillText(
               `${i + 1}`,
-              p.x * this.scale + 100,
+              p.x * this.scale + this.moveLenFront,
               -p.y * this.scale + 90
             ); //填充文字
-            context.moveTo(p.x * this.scale + 100, -p.y * this.scale + 100); //坐标起点
+            context.moveTo(p.x * this.scale + this.moveLenFront, -p.y * this.scale + this.moveLenFront); //坐标起点
             continue;
           }
-          context.lineTo(p.x * this.scale + 100, -p.y * this.scale + 100); //终点,或者理解为下一个点
+          context.lineTo(p.x * this.scale + this.moveLenFront, -p.y * this.scale + this.moveLenFront); //终点,或者理解为下一个点
           context.fillText(
             `${i + 1}`,
-            p.x * this.scale + 100,
-            -p.y * this.scale + 100
+            p.x * this.scale + this.moveLenFront,
+            -p.y * this.scale + this.moveLenFront
           ); //填充文字
         }
 
@@ -409,8 +432,11 @@ export default {
       }
 
     },
+    //selectedArr是当前checked的子项数组列表
+    //selectedItem是当前选择的项，可能是子项也可能是父项
     checkItem(selectedArr, selectedItem) {
-      if (selectedItem.checked == false) {
+      //关闭图层，点击父节点或者子节点checked列表为空
+      if ( selectedItem.children && !selectedItem.checked || selectedArr.length == 0) {
         this.$store.commit("setShowCheck", {
           key: "blastChecked",
           checked: false
@@ -421,21 +447,33 @@ export default {
         context.clearRect(0, 0, canvas.width, canvas.height);
         //检查是否其他图层打开
         if (this.$store.state.showListCheck.shotChecked) {
-          this.$parent.$refs.shotholeRef.render2Dshothole();
+          setTimeout(() => {
+            this.$parent.$refs.shotholeRef.render2Dshothole(); 
+          });
+               
         }
-        return;
+      }else if(selectedItem.children && selectedItem.checked || selectedArr.length !== 0){
+        //打开图层
+        if (this.clickItemNums < 1) {
+            this.clickItemNums++;
+            //初始化数据
+            this.orderTypeData = this.orderTypeSort(this.shotData);
+            this.getBlastTree()
+          }
+          //打开视图
+          this.$store.commit("setShowCheck", {
+            key: "blastChecked",
+            checked: true
+          });
+          //渲染二维
+          setTimeout(()=>{
+            this.render2DBoomOrder();
+          })
+            
       }
-      if (this.clickItemNums < 1) {
-        this.clickItemNums++;
-        //初始化数据
-        this.orderTypeData = this.orderTypeSort(this.shotData);
-      }
-      //打开视图
-      this.$store.commit("setShowCheck", {
-        key: "blastChecked",
-        checked: true
-      });
-        this.render2DBoomOrder();
+ 
+      
+
     },
     getModel() {
       this.riskData.forEach(it => {

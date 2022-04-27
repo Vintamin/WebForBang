@@ -40,7 +40,10 @@ export default {
       labelEntity1: [],
       labelEntity2: [],
       labelID: [],
-      isDisabled: true
+      isDisabled: true,
+      baseViewPoint:null,
+      degreeDataArr: [],
+      clickItemNums: 0,
     };
   },
   props: {
@@ -73,6 +76,7 @@ export default {
   watch: {
     projectID(val) {
       this.isDisabled = false;
+      this.baseViewPoint = new Cesium.Cartesian3(3693925.069,-12419.3614,1190.502)
     }
   },
   methods: {
@@ -105,27 +109,42 @@ export default {
       const alt = cartographic.height;
       return { lng, lat, alt };
     },
+    //初始化数据
+    initData(){
+        this.lanwayData.forEach((item, index) => {
+          console.log("item是",item)
+          const itemData ={};
+          itemData.lanwayName = item.lanwayName;
+          itemData.initalDegreeData = [];
+          item.data.forEach(val=>{
+            itemData.initalDegreeData.push(this.cartesianTolngLatAlt(val))
+          })
+          this.degreeDataArr.push(itemData);
+      });
+
+    },
     draw3DLanway() {
-      const count = this.lanwayData.length;
-      this.lanwayData.forEach((item, index) => {
-        let lanwayDataArr = [];
-        item.data.forEach(dataItem => {
-          lanwayDataArr.push(dataItem.x);
-          lanwayDataArr.push(dataItem.y);
-          lanwayDataArr.push(dataItem.z);
-        });
+      this.degreeDataArr.forEach((item, index) => {
+        const valList = []
+        item.initalDegreeData.forEach(degreeItem=>{
+          valList.push(...Object.values(degreeItem))  
+        })
         viewer.entities.add({
           name: item.lanwayName,
           id: `shotID${index}-1`,
           polylineVolume: {
-            positions: Cesium.Cartesian3.fromArray(lanwayDataArr),
-            shape: this.computeCircle(1.0),
+            positions: Cesium.Cartesian3.fromDegreesArrayHeights(valList),
+            shape: this.computeCircle(5.0),
             material: new Cesium.Color(0.3, 0.2, 0.1, 1)
           }
         });
-        console.log(lanwayDataArr);
+
       });
-      this.viewer.zoomTo(this.viewer.entities);
+      const degreePoint = this.cartesianTolngLatAlt(this.baseViewPoint);
+      viewer.camera.flyTo({
+    destination : Cesium.Cartesian3.fromDegrees(degreePoint.lng,degreePoint.lat,degreePoint.alt)
+});
+      //this.viewer.zoomTo(this.viewer.entities);
       console.log("lanwayData是", this.lanwayData);
     },
     //点击按钮后移除钻孔
@@ -137,6 +156,11 @@ export default {
         });
         return;
       } else {
+      if (this.clickItemNums < 1) {
+        this.clickItemNums++;
+        //初始化数据,只在第一次点击时初始化一次
+        this.initData(this.shotData, this.basicPoint);
+      }
         this.$store.commit("setShowCheck", {
           key: "routeChecked",
           checked: true

@@ -55,11 +55,14 @@ export default {
       equipmentData: [],
       maskedData: [],
       showDialog: false,
-      scale: 30,
-      moveLenFront: 120,
-      moveLenLeft: 120,
-      moveX: 40,
-      moveLenOver: 120,
+      //缩放比例
+      scale: 40,
+      //正视图距离上和左的距离，同时也作为左视图距离正视图的距离
+      moveLenFront: 150,
+      //左视图距离上和左的距离
+      moveLenLeft: 150,
+      //俯视图距离上和左的距离
+      moveLenOver: 150,
       TypeColor: {
         掏槽: "#0000FF", //蓝色
         辅助1: "#00FF00", //绿色
@@ -88,7 +91,9 @@ export default {
       basicPoint: null,
       shotHolePosArray: [],
       scale3D: 5,
-      shotHoleIdArr: []
+      //三维炮眼实体ID数组
+      shotHoleIdArr: [],
+      context: null,
     };
   },
   props: {
@@ -123,7 +128,6 @@ export default {
       type: String,
       default: ""
     },
-    context: null,
     shotData: []
   },
   components: {
@@ -354,12 +358,6 @@ export default {
       this.drawOverLine(fuZhuThirdArr);
       this.drawOverLine(zhouBianYanArr);
 
-      const imgData = this.context.getImageData(
-        0,
-        0,
-        canvas.width,
-        canvas.height
-      );
     },
     //正视图
     drawFrontLine() {
@@ -386,28 +384,28 @@ export default {
     drawLeftLine(typeArr) {
       for (let i = 0; i < typeArr.length; i++) {
         let pfront = new Point(
-          this.xLeftFirstCor * this.scale + this.moveLenLeft + this.moveX,
+          this.xLeftFirstCor * this.scale + this.moveLenLeft + this.moveLenFront,
           -typeArr[0].pStart.y * this.scale + this.moveLenLeft,
           typeArr[0].pStart.z * this.scale + this.moveLenLeft
         );
         let pfront2 = new Point(
           (this.xLeftFirstCor - typeArr[0].msealCor.z) * this.scale +
             this.moveLenLeft +
-            this.moveX,
+            this.moveLenFront,
           -typeArr[0].msealCor.y * this.scale + this.moveLenLeft,
           typeArr[0].pEnd.z * this.scale + this.moveLenLeft
         );
         let pfront3 = new Point(
           (this.xLeftFirstCor - typeArr[0].mmudCor.z) * this.scale +
             this.moveLenLeft +
-            this.moveX,
+            this.moveLenFront,
           -typeArr[0].mmudCor.y * this.scale + this.moveLenLeft,
           typeArr[0].pEnd.z * this.scale + this.moveLenLeft
         );
         let pfront4 = new Point(
           (this.xLeftFirstCor - typeArr[0].pEnd.z) * this.scale +
             this.moveLenLeft +
-            this.moveX,
+            this.moveLenFront,
           -typeArr[0].pEnd.y * this.scale + this.moveLenLeft,
           typeArr[0].pEnd.z * this.scale + this.moveLenLeft
         );
@@ -434,28 +432,28 @@ export default {
 
         let mid = Math.floor(typeArr.length / 2);
         let pmid = new Point(
-          this.xLeftFirstCor * this.scale + this.moveLenLeft + this.moveX,
+          this.xLeftFirstCor * this.scale + this.moveLenLeft + this.moveLenFront,
           -typeArr[mid].pStart.y * this.scale + this.moveLenLeft,
           typeArr[mid].pStart.z * this.scale + this.moveLenLeft
         );
         let pmid2 = new Point(
           (this.xLeftFirstCor - typeArr[0].msealCor.z) * this.scale +
             this.moveLenLeft +
-            this.moveX,
+            this.moveLenFront,
           -typeArr[mid].msealCor.y * this.scale + this.moveLenLeft,
           typeArr[mid].pEnd.z * this.scale + this.moveLenLeft
         );
         let pmid3 = new Point(
           (this.xLeftFirstCor - typeArr[0].mmudCor.z) * this.scale +
             this.moveLenLeft +
-            this.moveX,
+            this.moveLenFront,
           -typeArr[mid].mmudCor.y * this.scale + this.moveLenLeft,
           typeArr[mid].pEnd.z * this.scale + this.moveLenLeft
         );
         let pmid4 = new Point(
           (this.xLeftFirstCor - typeArr[0].pEnd.z) * this.scale +
             this.moveLenLeft +
-            this.moveX,
+            this.moveLenFront,
           -typeArr[mid].pEnd.y * this.scale + this.moveLenLeft,
           typeArr[mid].pEnd.z * this.scale + this.moveLenLeft
         );
@@ -784,7 +782,6 @@ export default {
         });
         geoInstanceArr.push(zhuangyaoInstance);
       }
-      console.log("geoInstance",viewer.scene.primitives);
 /*       viewer.scene.primitives.add(
         new Cesium.Primitive({
           geometryInstance: geoInstanceArr,
@@ -799,7 +796,7 @@ export default {
     },
     checkItem(selectedArr, selectedItem) {
       //关闭图层
-      if (selectedItem.checked === false) {
+      if (selectedItem.checked == false) {
         this.$store.commit("setShowCheck", {
           key: "shotChecked",
           checked: false
@@ -810,30 +807,47 @@ export default {
         context.clearRect(0, 0, canvas.width, canvas.height);
         //检查是否其他图层打开
         if (this.$store.state.showListCheck.blastChecked) {
-          this.$parent.$refs.blastOrderRef.render2DBoomOrder();
+          setTimeout(()=>{
+            this.$parent.$refs.blastOrderRef.render2DBoomOrder();
+          })       
         }
-        //清除三维图形
+        //隐藏三维图形
         for (var i = 0; i < this.shotHoleIdArr.length; i++) {
-          this.viewer.entities.removeById(this.shotHoleIdArr[i]);
+          this.viewer.entities.getById(this.shotHoleIdArr[i]).show = false;
         }
         return;
+      }else{
+            if (this.clickItemNums < 1) {
+            this.clickItemNums++;
+            //初始化数据,只在第一次点击时初始化一次
+            this.initData(this.shotData, this.basicPoint);
+            //初次渲染三维
+            this.draw3DShothole();
+          }else{
+            //将entity显示出来
+            for (var i = 0; i < this.shotHoleIdArr.length; i++) {
+                this.viewer.entities.getById(this.shotHoleIdArr[i]).show = true;
+            }
+          }
+          //修改store中的状态值,此处有问题
+           this.$store.commit("setShowCheck", {
+            key: "shotChecked",
+            checked: true
+          });
+          //开始渲染二维
+           setTimeout(() => {
+             this.render2Dshothole();
+          }); 
+          //这里不太明白为什么必须需要再重新绘制一下起爆顺序
+                  if (this.$store.state.showListCheck.blastChecked) {
+          setTimeout(()=>{
+            this.$parent.$refs.blastOrderRef.render2DBoomOrder();
+          })       
+        }
+          
+  
       }
-      if (this.clickItemNums < 1) {
-        this.clickItemNums++;
-        //初始化数据,只在第一次点击时初始化一次
-        this.initData(this.shotData, this.basicPoint);
-      }
-      //打开视图
-      this.$store.commit("setShowCheck", {
-        key: "shotChecked",
-        checked: true
-      });
-      setTimeout(() => {
-        //开始渲染二维
-        this.render2Dshothole();
-        //开始渲染三维
-        this.draw3DShothole();
-      });
+
     },
     clickItem(clickedItem) {
       // console.log(clickedItem);
